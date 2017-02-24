@@ -21,12 +21,15 @@
 
 #od-json {
   float: right;
-  max-width: 40%;
+  max-width: 50%;
 }
 
 #od-items {
-  max-width: 60%;
+  max-width: 50%;
   float: left;
+  display: table;
+  border: 1px solid #094AB2;
+  border-collapse: collapse;
 }
 
 #od-breadcrumb {
@@ -60,9 +63,9 @@ body {
 }
 
 .item {
-  display: inline-block;
-  width: 200px;
-  height: 150px;
+  display: table-row;
+  /*width: 200px;*/
+  height: 50px;
   margin: 0.1em;
   margin-top: 0.05em;
   margin-bottom: 0.05em;
@@ -78,6 +81,7 @@ body {
 .nameplate {
     /* background-color: #094AB2; */
     /* width: 200px; */
+    max-width:10px;
     height: 16pt;
     padding: 1px;
     position: absolute;
@@ -102,16 +106,32 @@ img {
   height:auto;
   width: auto;
   max-width:200px;
-  /* max-height:150px; */
+  max-height:48px;
   /* height:  150px; */
   overflow: hidden;
   /* visibility: hidden; */
 }
 
 .img-container {
-  max-height: 126px;
+  max-height: 16px;
   overflow: hidden;
 }
+
+.list-cell {
+  overflow: hidden;
+  display: table-cell;
+}
+
+.list-header {
+  overflow: hidden;
+  display: table-row;
+}
+
+.list-header-name {
+  overflow: hidden;
+  display: table-cell;
+}
+
 
 .oneup {
   width:  auto;

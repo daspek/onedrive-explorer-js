@@ -133,7 +133,7 @@
   </div>
   <script>
     var baseUrl = getQueryVariable("baseUrl")
-    msGraphApiRoot = (baseUrl) ? baseUrl : "https://graph.microsoft.com/v1.0/me";
+    msGraphApiRoot = (baseUrl) ? baseUrl : "https://graph.microsoft.com/beta";
 
     var data = loadFromCookie();
     if (data)
@@ -250,17 +250,43 @@
             afterPath = ":";
           }
 
-          var odurl = msGraphApiRoot + "/drive/root" + beforePath + path + afterPath;
+          //var odurl = msGraphApiRoot + "/me/drive/root" + beforePath + path + afterPath;
+          var listUrl = msGraphApiRoot + "/sharePoint/sites/fb074573-ce86-4b9f-84b3-aeb26aff7140,a51af1b3-694f-4902-9fea-9a9cb5b6c269/lists/241bc31b-09e8-4a87-be81-628965a76a08"; // + beforePath + path + afterPath;
 
           // the expand and select parameters mean:
           //  "for the item i'm addressing, include its thumbnails and children,
           //   and for each of the children, include its thumbnails. for those
           //   thumbnails, return the 'large' size"
           var thumbnailSize = "large"
-          var odquery = "?expand=thumbnails,children(expand=thumbnails(select=" + thumbnailSize + "))";
+          //var odquery = "?expand=thumbnails,children(expand=thumbnails(select=" + thumbnailSize + "))";
+          var listItemsQuery = "/items?expand=columnSet";
+          var listSchemaQuery = "/fields";
 
+          if (path && path.length > 0) {
+            listItemsQuery = "/items/" + path +"?expand=columnSet";
+          }
+
+          var fields = {};
+
+          // query schema
           $.ajax({
-            url: odurl + odquery,
+            url: listUrl + listSchemaQuery,
+            dataType: 'json',
+            headers: { "Authorization": "Bearer " + token },
+            accept: "application/json;odata.metadata=none",
+            success: function(data) {
+              if (data && data.value) {
+                    $.each(data.value, function(i, field) {
+                      if (!field.hidden && field.type != "Computed" && field.name.indexOf("App")==-1)
+                        fields[field.name] = field;
+                    });
+              }
+            }
+          });
+
+          // query items
+          $.ajax({
+            url: listUrl + listItemsQuery,
             dataType: 'json',
             headers: { "Authorization": "Bearer " + token },
             accept: "application/json;odata.metadata=none",
@@ -281,13 +307,27 @@
                 // they'll be in an array called 'data'
                 var decodedPath = decodeURIComponent(path);
                 document.title = "OneDrive Explorer" + ((decodedPath.length > 0) ? " - " + decodedPath : "");
-                  
+
                 updateBreadcrumb(decodedPath);
                 var children = data.children || data.value;
                 if (children && children.length > 0) {
+
+                 var header = $("<div>").attr("class", "list-header").appendTo("#od-items");
+                   $("<div>").
+                     addClass("list-header-name").
+                     text("").
+                     appendTo(header);
+
+                 $.each(fields, function(i, field) {
+                   $("<div>").
+                     addClass("list-header-name").
+                     text(field.title).
+                     appendTo(header);
+                 });
+
                   $.each(children, function(i,item) {
-                    var tile = $("<div>").
-                      attr("href", "#" + path + "/" + encodeURIComponent(item.name)).
+                    var row = $("<div>").
+                      attr("href", "#" + path + "/" + encodeURIComponent(item.listItemId)).
                       addClass("item").
                       click(function() {
                         // when the page changes in response to a user click,
@@ -300,6 +340,10 @@
                         odauth(true);
                       }).
                       appendTo("#od-items");
+
+                    var tile = $("<div>").
+                      addClass("tile").
+                      appendTo(row);
 
                     // look for various facets on the items and style them accordingly
                     if (item.folder) {
@@ -316,36 +360,73 @@
                         appendTo(container);
                     }
 
-                    $("<div>").
-                      addClass("nameplate").
-                      text(item.name).
-                      appendTo(tile);
+                    // $("<div>").
+                    //   addClass("nameplate").
+                    //   text(item.name).
+                    //   appendTo(tile);
+
+                    $.each(fields, function(i, field) {
+                      var value = item.columnSet[field.name];
+                        $("<div>").
+                          addClass("list-cell").
+                          text(value).
+                          appendTo(row);
+                    });
+                    
                   });
                 }
-                else if (data.file) {
+                else if (data.columnSet) {
                   // 1-up view
+
+                 var header = $("<div>").
+                  addClass("list-header").
+                  appendTo("#od-items");
+
+                  $("<div>").
+                     addClass("list-header-name").
+                     text("name").
+                     appendTo(header);
+                  $("<div>").
+                     addClass("list-header-name").
+                     text("value").
+                     appendTo(header);
+
+                  $.each(fields, function(i, field) {
+
+
                   var tile = $("<div>").
                     addClass("item").
-                    addClass("oneup").
+                   // addClass("oneup").
                     appendTo("#od-items");
 
-                  var downloadUrl = data['@microsoft.graph.downloadUrl'];
-                  if (downloadUrl) {
-                    tile.click(function(){window.open(downloadUrl, "Download");});
-                  }
+                  // var downloadUrl = data['@microsoft.graph.downloadUrl'];
+                  // if (downloadUrl) {
+                  //   tile.click(function(){window.open(downloadUrl, "Download");});
+                  // }
 
-                  if (data.folder) {
-                    tile.addClass("folder");
-                  }
+                  // if (data.folder) {
+                  //   tile.addClass("folder");
+                  // }
 
-                  if (data.thumbnails && data.thumbnails.length > 0) {
-                    $("<img>").
-                      attr("src", data.thumbnails[0].large.url).
-                      appendTo(tile);
-                  }
+                  // if (data.thumbnails && data.thumbnails.length > 0) {
+                  //   $("<img>").
+                  //     attr("src", data.thumbnails[0].large.url).
+                  //     appendTo(tile);
+                  // }
+
+                      var value = data.columnSet[field.name];
+                        $("<div>").
+                          addClass("list-cell").
+                          text(field.title).
+                          appendTo(tile);
+                        $("<div>").
+                          addClass("list-cell").
+                          text(value).
+                          appendTo(tile);
+                    });
                 }
                 else {
-                  $('<p>No items in this folder.</p>').appendTo('#od-items');  
+                  $('<p>No items.</p>').appendTo('#od-items');  
                 }
               } else {
                 $('#od-items').empty();
