@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-  <title>OneDrive Explorer Sample</title>
+  <title>Microsoft Graph SharePoint Explorer Sample</title>
   <link rel="stylesheet" type="text/css" href="style.css"/>
   <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
   <script id="odauth" src="odauth.js"></script>
@@ -13,16 +13,16 @@
       // Register your own application at https://apps.dev.microsoft.com
       // and set the "clientId" and "redirectUri" variables accordingly.
       var appInfo = {
-        "clientId": "e9a57c07-69e4-41f5-b868-0f123d2fda17",
+        "clientId": "fd7dcd6f-6519-44a7-a883-882badc4b9dd",
         "redirectUri": "http://localhost:9999/callback.html",
-        "scopes": "user.read files.read files.read.all sites.read.all",
+        "scopes": "user.read sites.read.all",
         "authServiceUri": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
       };
       provideAppInfo(appInfo);
 
       // use Microsoft Graph v1.0
       var baseUrl = getQueryVariable("baseUrl")
-      msGraphApiRoot = (baseUrl) ? baseUrl : "https://graph.microsoft.com/v1.0/me";
+      msGraphApiRoot = (baseUrl) ? baseUrl : "https://graph.microsoft.com/beta";
       
       challengeForAuth();
 
@@ -116,13 +116,13 @@
   <div id="od-site">
     <div id="od-commands">
       <div id="od-login" style="display: hidden">
-        <a href="#" onclick="signInToOneDrive()">Sign in to OneDrive</a>&nbsp;&nbsp;
+        <a href="#" onclick="signInToOneDrive()">Sign in</a>&nbsp;&nbsp;
       </div>
       <div id="od-logoff" style="display: hidden">
         <a href="#" onclick="signOut()">Sign Out</a>
       </div>
     </div>
-    <div id="od-title">OneDrive Explorer Sample - JS</div>
+    <div id="od-title">Microsoft Graph SharePoint Explorer Sample - JS</div>
   </div>
   
   <div id="od-loading"></div>
@@ -209,7 +209,7 @@
         if (segment) {
           runningPath = runningPath + '/' + encodeURIComponent(segment);
         } else {
-          segment = 'Files';
+          segment = 'Site';
         }
 
         $('<a>').
@@ -306,7 +306,7 @@
                 // '/children' directly instead of '/parent?expand=children', then
                 // they'll be in an array called 'data'
                 var decodedPath = decodeURIComponent(path);
-                document.title = "OneDrive Explorer" + ((decodedPath.length > 0) ? " - " + decodedPath : "");
+                document.title = "Microsoft Graph SharePoint Explorer" + ((decodedPath.length > 0) ? " - " + decodedPath : "");
 
                 updateBreadcrumb(decodedPath);
                 var children = data.children || data.value;
