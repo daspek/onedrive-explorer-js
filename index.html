@@ -376,8 +376,7 @@
                   });
                 }
                 else if (data.columnSet) {
-                  // 1-up view
-
+                  // 1-up list entry view
                  var header = $("<div>").
                   addClass("list-header").
                   appendTo("#od-items");
@@ -393,10 +392,9 @@
 
                   $.each(fields, function(i, field) {
 
-
                   var tile = $("<div>").
                     addClass("item").
-                   // addClass("oneup").
+                    addClass("oneup").
                     appendTo("#od-items");
 
                   // var downloadUrl = data['@microsoft.graph.downloadUrl'];

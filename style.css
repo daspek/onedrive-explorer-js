@@ -120,6 +120,8 @@ img {
 .list-cell {
   overflow: hidden;
   display: table-cell;
+  padding-left: 5px;
+  padding-right: 5px;
 }
 
 .list-header {
