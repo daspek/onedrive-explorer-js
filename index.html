@@ -15,7 +15,7 @@
       var appInfo = {
         "clientId": "fd7dcd6f-6519-44a7-a883-882badc4b9dd",
         "redirectUri": "http://localhost:9999/callback.html",
-        "scopes": "user.read sites.read.all",
+        "scopes": "user.read sites.read.all mail.read",
         "authServiceUri": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
       };
       provideAppInfo(appInfo);
@@ -251,7 +251,7 @@
           }
 
           //var odurl = msGraphApiRoot + "/me/drive/root" + beforePath + path + afterPath;
-          var listUrl = msGraphApiRoot + "/sharePoint/sites/fb074573-ce86-4b9f-84b3-aeb26aff7140,a51af1b3-694f-4902-9fea-9a9cb5b6c269/lists/241bc31b-09e8-4a87-be81-628965a76a08"; // + beforePath + path + afterPath;
+          var listUrl = "/sharePoint/sites/fb074573-ce86-4b9f-84b3-aeb26aff7140,a51af1b3-694f-4902-9fea-9a9cb5b6c269/lists/241bc31b-09e8-4a87-be81-628965a76a08"; // + beforePath + path + afterPath;
 
           // the expand and select parameters mean:
           //  "for the item i'm addressing, include its thumbnails and children,
@@ -259,18 +259,26 @@
           //   thumbnails, return the 'large' size"
           var thumbnailSize = "large"
           //var odquery = "?expand=thumbnails,children(expand=thumbnails(select=" + thumbnailSize + "))";
-          var listItemsQuery = "/items?expand=columnSet";
-          var listSchemaQuery = "/fields";
+          var listItemsQuery = listUrl + "/items?expand=columnSet";
+          var listSchemaQuery = listUrl + "/fields";
+          var mailQuery = "/me/messages";
 
           if (path && path.length > 0) {
-            listItemsQuery = "/items/" + path +"?expand=columnSet";
+            var split = path.split('/');
+            if (split.length == 2) {
+              listItemsQuery = listUrl + "/items/" + path +"?expand=columnSet";
+            } else if (split.length == 3) {
+              listItemsQuery = mailQuery + "?search=" + split[2];
+            } else if (split.length == 4) {
+              listItemsQuery = mailQuery + "/" + split[3];
+            }
           }
 
           var fields = {};
 
           // query schema
           $.ajax({
-            url: listUrl + listSchemaQuery,
+            url: msGraphApiRoot + listSchemaQuery,
             dataType: 'json',
             headers: { "Authorization": "Bearer " + token },
             accept: "application/json;odata.metadata=none",
@@ -286,7 +294,7 @@
 
           // query items
           $.ajax({
-            url: listUrl + listItemsQuery,
+            url: msGraphApiRoot + listItemsQuery,
             dataType: 'json',
             headers: { "Authorization": "Bearer " + token },
             accept: "application/json;odata.metadata=none",
@@ -318,16 +326,32 @@
                      text("").
                      appendTo(header);
 
-                 $.each(fields, function(i, field) {
-                   $("<div>").
-                     addClass("list-header-name").
-                     text(field.title).
-                     appendTo(header);
-                 });
+                  if (children[0].columnSet) {
+                    $.each(fields, function(i, field) {
+                      $("<div>").
+                        addClass("list-header-name").
+                        text(field.title).
+                        appendTo(header);
+                    });
+                  } else if (children[0].subject) {
+                      $("<div>").
+                        addClass("list-header-name").
+                        text('date').
+                        appendTo(header);
+                      $("<div>").
+                        addClass("list-header-name").
+                        text('subject').
+                        appendTo(header);
+                  }
 
                   $.each(children, function(i,item) {
+
+                    var id = item.id;
+                    if (item.listItemId)
+                      id = item.listItemId;
+
                     var row = $("<div>").
-                      attr("href", "#" + path + "/" + encodeURIComponent(item.listItemId)).
+                      attr("href", "#" + path + "/" + encodeURIComponent(id)).
                       addClass("item").
                       click(function() {
                         // when the page changes in response to a user click,
@@ -365,14 +389,26 @@
                     //   text(item.name).
                     //   appendTo(tile);
 
-                    $.each(fields, function(i, field) {
-                      var value = item.columnSet[field.name];
+                    if (item.columnSet) {
+                      $.each(fields, function(i, field) {
+                        var value = item.columnSet[field.name];
+                          $("<div>").
+                            addClass("list-cell").
+                            text(value).
+                            appendTo(row);
+                      });
+                    } else {
+                       $("<div>").
+                            addClass("list-cell").
+                            text(item.createdDateTime).
+                            appendTo(row);
                         $("<div>").
-                          addClass("list-cell").
-                          text(value).
-                          appendTo(row);
-                    });
-                    
+                            addClass("list-cell").
+                            text(item.subject).
+                            appendTo(row);
+                    }
+
+
                   });
                 }
                 else if (data.columnSet) {
@@ -393,8 +429,19 @@
                   $.each(fields, function(i, field) {
 
                   var tile = $("<div>").
+                  attr("href", "#" + path + "/" + encodeURIComponent(data.columnSet['Card_x0020_Serial_x003a_Alias'])).
                     addClass("item").
                     addClass("oneup").
+                    click(function() {
+                      // when the page changes in response to a user click,
+                      // we set loadedForHash to the new value and call
+                      // odauth ourselves in user-click mode. this causes
+                      // the catch-all hashchange event handler not to
+                      // process the page again. see comment at the top.
+                      loadedForHash = $(this).attr('href');
+                      window.location = loadedForHash;
+                      odauth(true);
+                    }).
                     appendTo("#od-items");
 
                   // var downloadUrl = data['@microsoft.graph.downloadUrl'];
@@ -422,6 +469,10 @@
                           text(value).
                           appendTo(tile);
                     });
+                } else if (data.body) {
+                  var header = $("<div>").
+                  html(data.body.content).
+                  appendTo("#od-items");
                 }
                 else {
                   $('<p>No items.</p>').appendTo('#od-items');  
