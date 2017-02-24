@@ -20,11 +20,12 @@
 }
 
 #od-json {
-  margin-top: 200px;
+  float: right;
+  max-width: 50%;
 }
 
 #od-items {
-  max-width: 100%;
+  max-width: 50%;
   float: left;
   display: table;
   border: 1px solid #094AB2;
@@ -119,9 +120,8 @@ img {
 .list-cell {
   overflow: hidden;
   display: table-cell;
-  padding-left: 4px;
-  padding-right: 4px;
-  border: 1px solid black;
+  padding-left: 5px;
+  padding-right: 5px;
 }
 
 .list-header {
